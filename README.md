@@ -1,2 +1,3 @@
 # R_Essentials_Modeler
-Download R Essentials required for SPSS Modeler
+
+Click on 'Releases' to download R Essentials required for your OS and version of SPSS Modeler.
