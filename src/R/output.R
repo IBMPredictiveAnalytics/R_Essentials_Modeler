@@ -76,7 +76,7 @@ ibmspsscfoutput.SetHTMLWithAllGraphs <- function()
 		temp1 <- paste("<p>", as.character(name))
 		temp2 <- "<img src=\""
 		temp3 <- name
-		temp4 <- "\",width=\"500\" height=\"500\"></p>"
+		temp4 <- "\"></p>"
 		temp <- paste(temp1, temp2, temp3, temp4)
 		htmlBegin <- paste(htmlBegin, temp)
 	}

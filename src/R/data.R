@@ -83,7 +83,7 @@ ibmspsscfdata.GetData <- function(fields=NULL,
 										PACKAGE=ibmspsscf_package)
 
 	n <- length(out)
-	last.SpssCfError <- out[[n]]
+	last.SpssCfError <<- out[[n]]
 	if(last.SpssCfError !=0)
 	{
 		processSpssCFError(last.SpssCfError)
@@ -192,6 +192,13 @@ ibmspsscfdata.GetData <- function(fields=NULL,
 			{
 				## flagValues[1] is true value, flagValues[2] is false value
 				flagValues <- ibmspsscfdatamodel.GetFlagValues(i)
+				if(length(flagValues) == 0)
+				{
+					last.SpssCfError <<- 1022
+					.Call("ext_SendErrorCode",as.integer(last.SpssCfError), as.integer(3), as.list(fieldNames[[j]]), as.integer(err),PACKAGE=ibmspsscf_package)
+					stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+				}
+
 				for(index in 1:length(result[[j]]))
 				{
 					if(!is.na(result[[j]][index])) {
@@ -275,13 +282,14 @@ ibmspsscfdata.GetDataFromTemp <- function(missingValue = NA,
 			colClassesVec <- c(colClassesVec, "numeric")
 		}
 	} 
-	dataFromTempFile <- read.table(dataFileName, header=TRUE, sep=" ",colClasses=colClassesVec, encoding="UTF-8")
+	dataFromTempFile <- read.table(dataFileName, header=TRUE, sep=" ",colClasses=colClassesVec,fileEncoding="UTF-8")
 	unlink(dataFileName)
 	
 	
 	## 2. Convert flag fields
 	## process converting flag fields to logical fields
 	fieldMeasure <- modelerDataModel[4,]
+	fieldNames <- modelerDataModel[1,]
 	fieldCount <- ibmspsscfdatamodel.GetFieldCount()
 	fields <- 0:(fieldCount-1)
    	if(logicalFields == TRUE)
@@ -293,6 +301,13 @@ ibmspsscfdata.GetDataFromTemp <- function(missingValue = NA,
 			{
 				## flagValues[1] is true value, flagValues[2] is false value
 				flagValues <- ibmspsscfdatamodel.GetFlagValues(i)
+				if(length(flagValues) == 0)
+				{
+					last.SpssCfError <<- 1022
+					.Call("ext_SendErrorCode",as.integer(last.SpssCfError), as.integer(3), as.list(fieldNames[[j]]), as.integer(0),PACKAGE=ibmspsscf_package)
+					stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+				}
+				
 				## need to convert character firstly, factor will have value check 
 				dataFromTempFile[[j]] <- as.character(dataFromTempFile[[j]])
 				for(index in 1:length(dataFromTempFile[[j]]))
@@ -353,6 +368,16 @@ ibmspsscfdata.GetDataFromTemp <- function(missingValue = NA,
 		j<-1
 		for(i in fields)
 		{	
+			# only convert storage is not string, string has been converted in read.table
+			if("string" != fieldStorages[[j]] && ("nominal" == fieldMeasure[[j]] 
+			|| "discrete" == fieldMeasure[[j]]))
+			{
+				if(factorMode == "levels")
+				{
+					dataFromTempFile[[j]] <- factor(dataFromTempFile[[j]], ordered=FALSE)
+				}
+			}
+			
 			if("ordinal" == fieldMeasure[[j]])
 			{		
 				valueLabels <- ibmspsscfdatamodel.GetValueLabels(i)

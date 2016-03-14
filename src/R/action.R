@@ -32,6 +32,7 @@ ibmspsscfpkg.preaction <- function()
 	
 	outputPath <- ibmspsscfoutput.GetOutputDir()
 	##set the temp workspace, put the console result and graphs in this dir
+	ibmspsscfpkg.oldwd <<- getwd()
 	setwd(outputPath)
 	
 	
@@ -55,12 +56,9 @@ ibmspsscfpkg.preaction <- function()
 	
 	##Sys.setlocale("LC_ALL","ja_JP.utf8")
 	## set the locale of embedding R in Linux
-	if ("windows" != .Platform$OS.type)
-	{
-		out <- .C("ext_GetSystemLocale", as.character(""),as.integer(0),PACKAGE=ibmspsscf_package)
-		Sys.setlocale("LC_ALL",out[[1]])
-	}
-	
+	out <- .C("ext_GetSystemLocale", as.character(""),as.integer(0),PACKAGE=ibmspsscf_package)
+	Sys.setlocale("LC_ALL",out[[1]])
+
 	out <- .C("ext_IsDisplayTextOutput",as.integer(0),as.integer(0),PACKAGE=ibmspsscf_package)
 	last.SpssCfError <<- out[[2]] 
 	if(last.SpssCfError != 0)
@@ -140,5 +138,6 @@ ibmspsscfpkg.postaction <- function()
 
 ibmspsscfpkg.stopprocedure <- function()
 {
+	setwd(ibmspsscfpkg.oldwd)
 	.C("ext_StopProcedure",as.integer(0),PACKAGE=ibmspsscf_package)
 }

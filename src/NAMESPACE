@@ -1,4 +1,4 @@
-useDynLib(ibmspsscf82)
+useDynLib(ibmspsscf83)
 
 export(
 	ibmspsscfpkg.preaction,

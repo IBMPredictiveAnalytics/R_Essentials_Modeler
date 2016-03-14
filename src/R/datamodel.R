@@ -326,8 +326,7 @@ ibmspsscfdatamodel.SetDataModel <- function(dataModel)
 		
 		##check the storage
 		if(dataModel[3, i] == "string" || dataModel[3, i] == "integer" || dataModel[3, i] == "real"
-		|| dataModel[3, i] == "date" || dataModel[3, i] == "time" || dataModel[3, i] == "timestamp"
-		|| dataModel[3, i] == "unknown")
+		|| dataModel[3, i] == "date" || dataModel[3, i] == "time" || dataModel[3, i] == "timestamp")
 		{}
 		else 
 		{
@@ -358,6 +357,23 @@ ibmspsscfdatamodel.SetDataModel <- function(dataModel)
 		}
 		fieldMeasure <- c(fieldMeasure, as.character(dataModel[4, i]))
 		fieldFormat <- c(fieldFormat, as.character(dataModel[5, i]))
+		
+		##check  the role
+		dataModelRole <- dataModel[6, i]
+		if(dataModelRole =="" || dataModelRole == "input" ||dataModelRole == "target" 
+		|| dataModelRole == "both"|| dataModelRole == "partition" || dataModelRole == "split"
+		|| dataModelRole == "freqWeight" || dataModelRole == "recordId" || dataModelRole == "none")
+		{}
+		else 
+		{
+		    last.SpssCfError <<- 1007
+		    if(is.SpssCfError(last.SpssCfError))
+		    {
+			  invalidRole <- as.character(dataModelRole)
+			  .Call("ext_SendErrorCode",as.integer(last.SpssCfError), as.integer(3), as.list(invalidRole), as.integer(err),PACKAGE=ibmspsscf_package)
+			  stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+		    }
+		}
 		fieldRole <- c(fieldRole, as.character(dataModel[6, i]))
 	}
 	

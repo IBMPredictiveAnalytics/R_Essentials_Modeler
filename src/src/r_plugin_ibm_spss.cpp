@@ -1151,13 +1151,13 @@ extern "C"{
 /*****************************************************************************
  *                          Load & Unload hook                               *
  *****************************************************************************/
-	void R_init_ibmspsscf82(DllInfo *info)
+	void R_init_ibmspsscf83(DllInfo *info)
 	{
 		R_registerRoutines(info, cMethods, callMethods, 0, 0);
 		LoadLib();
 	}
 
-	void R_unload_ibmspsscf82(DllInfo *info)
+	void R_unload_ibmspsscf83(DllInfo *info)
 	{
 		FreeLib();
 		return;
