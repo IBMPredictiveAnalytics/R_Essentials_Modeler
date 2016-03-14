@@ -306,7 +306,7 @@ ibmspsscfdatamodel.SetDataModel <- function(dataModel)
 		last.SpssCfError <<- 1001 
 	    if( is.SpssCfError(last.SpssCfError))
 		{
-			out <- .C("ext_SendErrorCode",as.integer(last.SpssCfError), as.integer(err),PACKAGE=ibmspsscf_package)
+			.Call("ext_SendErrorCode",as.integer(last.SpssCfError), as.integer(3), as.list(""), as.integer(err),PACKAGE=ibmspsscf_package)
 			stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
 		}
 	}
@@ -335,7 +335,8 @@ ibmspsscfdatamodel.SetDataModel <- function(dataModel)
 			last.SpssCfError <<- 1004
 		    if(is.SpssCfError(last.SpssCfError))
 		    {
-			  ##save.SpssCfError <<- 1004
+			  invalidStorage <- as.character(dataModel[3, i])
+			  .Call("ext_SendErrorCode",as.integer(last.SpssCfError), as.integer(3), as.list(invalidStorage), as.integer(err),PACKAGE=ibmspsscf_package)
 			  stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
 		    }
 		}
@@ -351,6 +352,8 @@ ibmspsscfdatamodel.SetDataModel <- function(dataModel)
 			last.SpssCfError <<- 1005
 		    if(is.SpssCfError(last.SpssCfError))
 		    {
+			  invalidMeasure <- as.character(dataModel[4, i])
+			  .Call("ext_SendErrorCode",as.integer(last.SpssCfError), as.integer(3), as.list(invalidMeasure), as.integer(err),PACKAGE=ibmspsscf_package)
 			  stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
 		    }
 		}
@@ -365,6 +368,9 @@ ibmspsscfdatamodel.SetDataModel <- function(dataModel)
 		last.SpssCfError <<- 1002
 		if(is.SpssCfError(last.SpssCfError))
 		{
+			duplicatedFieldName <-  fieldName[anyDuplicated(fieldName)]
+			#duplicatedFieldName <-  c(duplicatedFieldName, "a multi parameter test")
+			.Call("ext_SendErrorCode",as.integer(last.SpssCfError), as.integer(3), as.list(duplicatedFieldName), as.integer(err),PACKAGE=ibmspsscf_package)
 			stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
 		}
 	}

@@ -192,48 +192,49 @@ ibmspsscfdata.GetData <- function(fields=NULL,
 	{
 		j<-1
 		for(i in fields)
-		{
+		{	
 			if("nominal" == fieldMeasure[[j]] || "discrete" == fieldMeasure[[j]])
 			{
-				valueLabels <- ibmspsscfdatamodel.GetValueLabels(i)
-				uniqueset<- unique(result[[j]])
-
-				for(i in uniqueset)
-				{
-					if(!(i%in%valueLabels$values)&&!(is.na(i)&&!is.nan(i)))
-					{
-						valueLabels$values <- append(valueLabels$values,i)
-						valueLabels$labels <- append(valueLabels$labels,i)  
-					}
-				} 				
 				if(factorMode == "labels")
 				{
-					result[[j]] <- factor(result[[j]],levels = valueLabels$values, labels= valueLabels$labels, ordered = FALSE)
+					valueLabels <- ibmspsscfdatamodel.GetValueLabels(i)
+					if(length(valueLabels$values) == 0) 
+					{
+						result[[j]] <- factor(result[[j]], ordered = FALSE)
+					}
+					else 
+					{
+						result[[j]] <- factor(result[[j]],levels = valueLabels$values, labels = valueLabels$labels, ordered = FALSE)
+					} 
 				}
 				else if(factorMode == "levels")
 				{
-					result[[j]] <- factor(result[[j]],levels = valueLabels$values, ordered = FALSE)
+					# let it has the same behaviour of read.table
+					result[[j]] <- factor(result[[j]], ordered = FALSE)
 				}
 			}
 			if("ordinal" == fieldMeasure[[j]])
-			{
+			{		
 				valueLabels <- ibmspsscfdatamodel.GetValueLabels(i)
-				uniqueset<- unique(result[[j]])
-				for(i in uniqueset)
-				{                       
-					if(!(i%in%valueLabels$values)&&!(is.na(i)&&!is.nan(i)))
-					{
-						valueLabels$values <- append(valueLabels$values,i)
-						valueLabels$labels <- append(valueLabels$labels,i)  
-					}
-				}     
 				if(factorMode == "labels")
 				{
-					result[[j]] <- factor(result[[j]],levels = valueLabels$values, labels= valueLabels$labels, ordered=TRUE)
+					if(length(valueLabels$values) == 0) {
+						result[[j]] <- factor(result[[j]], ordered=TRUE)
+					}
+					else {
+						result[[j]] <- factor(result[[j]],levels = valueLabels$values, labels= valueLabels$labels, ordered=TRUE)
+					}
 				}
 				else if(factorMode == "levels")
 				{
-					result[[j]] <- factor(result[[j]],levels = valueLabels$values, ordered=TRUE)
+					if(length(valueLabels$values) == 0) 
+					{
+						result[[j]] <- factor(result[[j]], ordered=TRUE)
+					}
+					else 
+					{
+						result[[j]] <- factor(result[[j]],levels = valueLabels$values, ordered=TRUE)
+					}
 				}
 			}
 			j<-j+1
@@ -348,18 +349,30 @@ ibmspsscfdata.SetData <- function(x)
     x <- as.list(x)
     fieldNums <- length(x)
     err <- 0
+	
 	## the outputDataModel get in ibmspsscfdatamodel.SetDataModel
 	if(is.null(outputStorages))
 	{
 		last.SpssCfError <<- 1011
 		if(is.SpssCfError(last.SpssCfError))
 		{
-			out <- .C("ext_SendErrorCode",as.integer(last.SpssCfError), as.integer(err),PACKAGE=ibmspsscf_package)
+			.Call("ext_SendErrorCode",as.integer(last.SpssCfError), as.integer(3), as.list(""), as.integer(err),PACKAGE=ibmspsscf_package)
 			stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
 		}
 	} else if(0 == length(outputStorages))
 	{
 		return(NULL)
+	}
+	
+	## check the length of modelerData and outputStorages
+	if(ncol(modelerData) != length(outputStorages))
+	{
+		last.SpssCfError <<- 1012
+		if(is.SpssCfError(last.SpssCfError))
+		{
+			.Call("ext_SendErrorCode",as.integer(last.SpssCfError), as.integer(3), as.list(""), as.integer(err),PACKAGE=ibmspsscf_package)
+			stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+		}
 	}
 	
     fieldStorages <- outputStorages
@@ -375,6 +388,15 @@ ibmspsscfdata.SetData <- function(x)
 				## convert seconds to days
 				x[[i]] <- x[[i]]/((24*60*60))
 			}
+		}
+		
+		# check if the variable is a list type
+		# if a list, report a warning to cf R component
+		if(is.list(x[[i]])) {
+			last.SpssCfError <<- 1014
+			fieldNames <- names(x)
+			.Call("ext_SendErrorCode",as.integer(last.SpssCfError), as.integer(4), as.list(fieldNames[i]), as.integer(err),PACKAGE=ibmspsscf_package)
+			#stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
 		}
 		
         x[[i]] <- unlist(x[[i]])
