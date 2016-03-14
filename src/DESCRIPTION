@@ -1,7 +1,7 @@
-Package: ibmspsscf82
+Package: ibmspsscf70
 Type: Package
 Title: IBM SPSS CF R Plugin
-Version: 8.2.0.0
+Version: 8.0.0.0
 Author: IBM
 Maintainer: <***@cn.ibm.com>
 Description: An interface to embeded R in IBM SPSS CF based application

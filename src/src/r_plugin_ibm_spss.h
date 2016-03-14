@@ -20,13 +20,13 @@
 #define __R_PLUGIN_IBM_SPSS_H__
 
 #ifdef _WINDOWS
-#ifdef RINVOKEMODELER_EXPORTS
-#define RINVOKEMODELER_API __declspec(dllexport)
+  #ifdef RINVOKEMODELER_EXPORTS
+  #define RINVOKEMODELER_API __declspec(dllexport)
+  #else
+  #define RINVOKEMODELER_API __declspec(dllimport)
+  #endif
 #else
-#define RINVOKEMODELER_API __declspec(dllimport)
-#endif
-#else
-#define RINVOKEMODELER_API
+  #define RINVOKEMODELER_API
 #endif
 
 #include <wchar.h>
@@ -38,12 +38,11 @@ extern "C" {
 	RINVOKEMODELER_API void ext_StartProcedure(int* errLevel);
 	RINVOKEMODELER_API void ext_StopProcedure(int* errLevel);
 	RINVOKEMODELER_API void ext_GetOutputDir(const char **dirPath, int* errLevel);
-	RINVOKEMODELER_API void ext_GetTempDataFile(const char **filePath, int *miss, int* errLevel);
-	RINVOKEMODELER_API void ext_SetDataToTemp(const char **filePath, int* errLevel);
 	RINVOKEMODELER_API void ext_GetModel(const char** modelName, int* errLevel);
+	RINVOKEMODELER_API void ext_SendErrorCode(int* errCode, int* errLevel);
 	RINVOKEMODELER_API void ext_IsDisplayTextOutput(int* isDisplayTextOutput, int* errLevel);
 	RINVOKEMODELER_API void ext_GetSystemLocale(const char** locale, int* errLevel);
-	RINVOKEMODELER_API void ext_SendErrorCode(SEXP errCode, SEXP msgType, SEXP para, SEXP errLevel);
+
 
 	RINVOKEMODELER_API void ext_GetFieldName(const char **fieldName, int* index, int* errLevel);
 	RINVOKEMODELER_API void ext_GetFieldStorage(const char **fieldStorage, int* index, int* errLevel);

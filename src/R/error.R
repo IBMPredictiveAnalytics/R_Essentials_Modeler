@@ -164,14 +164,6 @@ getLanguage <- function()
     lang
 }
 
-processSpssCFError <- function(errorcode)
-{
-	if(is.SpssCfError(errorcode))
-	{
-		stop(printSpssError(errorcode),call. = FALSE, domain = NA)
-	}
-}
-
 is.SpssCfError <- function(errCode) 
 {
     isErr <- FALSE

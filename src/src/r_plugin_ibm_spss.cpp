@@ -1,6 +1,6 @@
 /************************************************************************
 ** IBM?? SPSS?? Modeler - Essentials for R
-** (c) Copyright IBM Corp. 1989, 2014
+** (c) Copyright IBM Corp. 1989, 2012
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License version 2 as published by
@@ -20,10 +20,10 @@
 #include <locale.h>
 #include <string.h>
 #ifdef _WINDOWS
-#include <windows.h>
+  #include <windows.h>
 #else
-#include <dlfcn.h>
-#include <stdlib.h>
+  #include <dlfcn.h>
+  #include <stdlib.h>
 #endif
 
 #include "r_plugin_ibm_spss.h"
@@ -31,63 +31,67 @@
 #include <Rversion.h>
 
 #ifdef _WINDOWS
-#define LIBHANDLE        HMODULE
-#define GETADDRESS       GetProcAddress
-#define LIBNAME          "plugin_callback.dll"
+  #define LIBHANDLE        HMODULE
+  #define GETADDRESS       GetProcAddress
+  #define LIBNAME          "plugin_callback.dll"
 #else
-#define LIBHANDLE        void*
-#define GETADDRESS       dlsym
-#ifdef DARWIN
-#define LIBNAME         "plugin_callback.dylib"
-#elif AIX
-#define LIBNAME         "plugin_callback.a"
-#else
-#define LIBNAME         "plugin_callback.so"
-#endif
+  #define LIBHANDLE        void*
+  #define GETADDRESS       dlsym
+  #ifdef DARWIN
+   #define LIBNAME         "plugin_callback.dylib"
+  #else
+   #define LIBNAME         "plugin_callback.so"
+  #endif
 #endif
 
 #if R_VERSION < 0x2600
-typedef char* R_CHAR_STAR;
+  typedef char* R_CHAR_STAR;
 #else
-typedef const char* R_CHAR_STAR;
+  typedef const char* R_CHAR_STAR;
 #endif
 
 #define BATCH_SIZE 100
 
 extern "C"{
-	LIBHANDLE pLib = 0;
-	const char libName[] = LIBNAME;
+    LIBHANDLE pLib = 0;
+    const char libName[] = LIBNAME;
 
-	const int LOAD_FAIL = 8011;
+    const int LOAD_FAIL = 8011;
 	const int EXCEPTION_THROWN = 9999;
-	const int LOAD_SUCCESS = 0;
+    const int LOAD_SUCCESS = 0;
 
     // The types of arguments, required by .C function calling.
 	static R_NativePrimitiveArgType StartProcedureArgs[1] = {INTSXP};
 	static R_NativePrimitiveArgType StopProcedureArgs[1] = {INTSXP};
-	static R_NativePrimitiveArgType PostOutputArgs[3] = {STRSXP,INTSXP,INTSXP};
+    static R_NativePrimitiveArgType PostOutputArgs[3] = {STRSXP,INTSXP,INTSXP};
 	static R_NativePrimitiveArgType GetOutputDirArgs[2] = {STRSXP, INTSXP};
-	static R_NativePrimitiveArgType GetTempDataFileArgs[3] = {STRSXP, INTSXP, INTSXP};
-	static R_NativePrimitiveArgType SetDataToTempArgs[2] = {STRSXP, INTSXP};
 	static R_NativePrimitiveArgType GetFieldNameArgs[3] = {STRSXP, INTSXP, INTSXP};
 	static R_NativePrimitiveArgType GetFieldStorageArgs[3] = {STRSXP, INTSXP, INTSXP};
 	static R_NativePrimitiveArgType GetModelArgs[2] = {STRSXP, INTSXP};
 	static R_NativePrimitiveArgType GetFieldCountArgs[2] = {INTSXP, INTSXP};
+	static R_NativePrimitiveArgType SendErrorCodeArgs[2] = {INTSXP, INTSXP};
 	static R_NativePrimitiveArgType IsDisplayTextOutputArgs[2] = {INTSXP, INTSXP};
+
+	// set
+	static R_NativePrimitiveArgType SetFieldNameArgs[3] = {STRSXP, INTSXP, INTSXP};
+	static R_NativePrimitiveArgType SetFieldLabelArgs[3] = {STRSXP, INTSXP, INTSXP};
+	static R_NativePrimitiveArgType SetFieldStorageArgs[3] = {STRSXP, INTSXP, INTSXP};
+	static R_NativePrimitiveArgType SetFieldMeasureArgs[3] = {STRSXP, INTSXP, INTSXP};
+	static R_NativePrimitiveArgType SetFieldFormatArgs[3] = {STRSXP, INTSXP, INTSXP};
+	static R_NativePrimitiveArgType InsertFieldArgs[3] = {STRSXP, INTSXP, INTSXP};
 
 	// data function
 	static R_NativePrimitiveArgType NextRecordArgs[1] = {INTSXP};
 	static R_NativePrimitiveArgType HasMoreDataArgs[2] = {LGLSXP, INTSXP};
 	static R_NativePrimitiveArgType GetRecordCountArgs[2] = {INTSXP, INTSXP};
 
-	// The method of using .C from R
-	static const R_CMethodDef cMethods[] = {
-		{"ext_PostOutput",(DL_FUNC)&ext_PostOutput, 3, PostOutputArgs},
-		{"ext_StartProcedure",(DL_FUNC)&ext_StartProcedure, 1, StartProcedureArgs},
+
+    
+    // The method of using .C from R
+    static const R_CMethodDef cMethods[] = {
+        {"ext_StartProcedure",(DL_FUNC)&ext_StartProcedure, 1, StartProcedureArgs},
 		{"ext_StopProcedure",(DL_FUNC)&ext_StopProcedure, 1, StopProcedureArgs},
 		{"ext_GetOutputDir",(DL_FUNC)&ext_GetOutputDir, 2, GetOutputDirArgs},
-		{"ext_GetTempDataFile",(DL_FUNC)&ext_GetTempDataFile, 3, GetTempDataFileArgs},
-		{"ext_SetDataToTemp",(DL_FUNC)&ext_SetDataToTemp, 2, SetDataToTempArgs},
 		{"ext_GetFieldName",(DL_FUNC)&ext_GetFieldName, 3, GetFieldNameArgs},
 		{"ext_GetFieldStorage",(DL_FUNC)&ext_GetFieldStorage, 3, GetFieldStorageArgs},
 		{"ext_GetModel",(DL_FUNC)&ext_GetModel, 2, GetModelArgs},
@@ -97,15 +101,17 @@ extern "C"{
 		{"ext_HasMoreData",(DL_FUNC)&ext_HasMoreData, 2, HasMoreDataArgs},
 		{"ext_GetRecordCount",(DL_FUNC)&ext_GetRecordCount, 2, GetRecordCountArgs},
 
+		{"ext_SendErrorCode",(DL_FUNC)&ext_SendErrorCode, 2, SendErrorCodeArgs},
 		{"ext_IsDisplayTextOutput",(DL_FUNC)&ext_IsDisplayTextOutput, 2, IsDisplayTextOutputArgs},
-		{0,0,0}
-	};
+        {0,0,0}
+    };
 
-	// The method of using .Call from R. 
-	// Notes: .C should be used when it is good enough.
-	// However, .C can pass simple argument only, for example, int, double, char*.
-	// That is not good enough for below functions.
-	static const R_CallMethodDef callMethods[] = {
+    // The method of using .Call from R. 
+    // Notes: .C should be used when it is good enough.
+    // However, .C can pass simple argument only, for example, int, double, char*.
+    // That is not good enough for below functions.
+    static const R_CallMethodDef callMethods[] = {
+        //{"ext_GetHandleList",(DL_FUNC)&ext_GetHandleList,1},   // returns vector.
 		{"ext_GetFieldNames",(DL_FUNC)&ext_GetFieldNames, 2},
 		{"ext_GetFieldStorages",(DL_FUNC)&ext_GetFieldStorages, 2},
 		{"ext_GetFieldMeasures",(DL_FUNC)&ext_GetFieldMeasures, 2},
@@ -118,17 +124,14 @@ extern "C"{
 		{"ext_GetData",(DL_FUNC)&ext_GetData, 4},
 		{"ext_SetDataModel", (DL_FUNC)&ext_SetDataModel, 2},
 		{"ext_SetData",(DL_FUNC)&ext_SetData,3},
-		{"ext_SendErrorCode",(DL_FUNC)&ext_SendErrorCode, 4},
-		{0,0,0}
-	};
+        {0,0,0}
+    };
 
     // The function pointer
-	static int (*PostSpssOutput)(const char **text, int length)  = 0;
+    static int (*PostSpssOutput)(const char **text, int length)  = 0;
 	static int (*StartProcedure)() = 0;
-	static int (*StopProcedure)() = 0;
+    static int (*StopProcedure)() = 0;
 	static const char* (*GetOutputDir)(int& errLevel) = 0;
-	static const char* (*GetTempDataFile)(int miss, int& errLevel) = 0;
-	void (*SetDataToTemp)(const char* fileName, int& errLevel) = 0;
 	static int (*GetFieldCount)(int& errLevel) = 0;
 	static const char* (*GetFieldName)(int index, int& errLevel) = 0;
 	static const char* (*GetFieldStorage)(int index, int& errLevel) = 0;
@@ -138,12 +141,16 @@ extern "C"{
 	static const char* (*GetFieldRole)(int index, int& errLevel) = 0;
 	static const char** (*GetStringMissingValues)(int index, int& count, int& errLevel) = 0;
 	static const char** (*GetFlagValues)(int index, int& count, int& errLevel) = 0;
+	
 
 	// the return is value labels
 	static const char** (*GetValueLabels)(int index, char*** values, int& numOfValues, int& errLevel) = 0;
+	
 	static const char* (*GetModel) (int& errLevel) = 0;
+	
 	static int (*InsertField)(char** fieldInfo, int index) = 0;
 	static int (*SetDataModel) () = 0;
+
 	static bool (*NextRecord)(int& errLevel) = 0;
 	static bool (*HasMoreData)(int& errLevel) = 0;
 	static int (*GetRecordCount)(int& errLevel) = 0;
@@ -152,20 +159,17 @@ extern "C"{
 	static char* (*GetStringValue)(int fieldIndex, int& isMissing, int& errLevel) = 0;
 	static double (*GetRealValue)(int fieldIndex, int& isMissing, int& errLevel) = 0;
 	static int (*SetData)(double** dValue, int** iValue, char*** sValue, bool** missing, int recordCount)	= 0;
-	static int (*SendErrorCode)(int errorCode, int msgType, const char** para, int count) = 0;
+	static int (*SendErrorCode)(int errorCode) = 0;
 	static bool (*IsDisplayTextOutput)(int& errLevel) = 0;
 	static const char* (*GetSystemLocale)(int& errLevel) = 0;
-	static void (*FreeString)(char *str)      = 0;
 
-	//Initialize the function pointer
-	void InitializeFP()
-	{
+    //Initialize the function pointer
+    void InitializeFP()
+    {
 		StartProcedure = (int (*)())GETADDRESS(pLib, "StartProcedure");
 		StopProcedure =  (int (*)())GETADDRESS(pLib, "StopProcedure");
-		PostSpssOutput = (int (*)(const char**, int ))GETADDRESS(pLib, "PostSpssOutput");
+        PostSpssOutput = (int (*)(const char**, int ))GETADDRESS(pLib, "PostSpssOutput");
 		GetOutputDir = (const char*(*)(int&))GETADDRESS(pLib, "GetOutputDir");
-		GetTempDataFile = (const char*(*)(int, int&))GETADDRESS(pLib, "GetTempDataFile");
-	    SetDataToTemp = (void(*)(const char*, int&))GETADDRESS(pLib, "SetDataToTemp");
 		GetFieldCount = (int (*)(int&))GETADDRESS(pLib, "GetFieldCount");
 		GetFieldName = (const char*(*)(int, int&))GETADDRESS(pLib, "GetFieldName");
 		GetFieldStorage = (const char*(*)(int, int&))GETADDRESS(pLib, "GetFieldStorage");
@@ -176,9 +180,12 @@ extern "C"{
 		GetStringMissingValues = (const char**(*)(int, int&, int&))GETADDRESS(pLib, "GetStringMissingValues");
 		GetFlagValues = (const char**(*)(int, int&, int&))GETADDRESS(pLib, "GetFlagValues");
 		GetValueLabels = (const char**(*)(int, char***, int&, int&))GETADDRESS(pLib, "GetValueLabels");
+
 		GetModel = (const char*(*)(int&))GETADDRESS(pLib, "GetModel");
+
 		InsertField = (int (*)(char**, int))GETADDRESS(pLib, "InsertField");
 		SetDataModel = (int (*)())GETADDRESS(pLib, "SetDataModel");
+
 		NextRecord = (bool (*)(int&))GETADDRESS(pLib, "NextRecord");
 		HasMoreData = (bool (*)(int&))GETADDRESS(pLib, "HasMoreData");
 		GetRecordCount = (int (*)(int&))GETADDRESS(pLib, "GetRecordCount");
@@ -187,20 +194,18 @@ extern "C"{
 		GetStringValue = (char* (*)(int, int&, int&))GETADDRESS(pLib, "GetStringValue");
 		GetRealValue = (double (*)(int, int&, int&))GETADDRESS(pLib, "GetRealValue");
 		SetData = (int (*)(double** dValue, int** iValue,  char*** sValue, bool** missing, 
-		int recordCount))GETADDRESS(pLib, "SetData");
-		SendErrorCode = (int(*)(int, int, const char**, int))GETADDRESS(pLib, "SendErrorCode");
+			int recordCount))GETADDRESS(pLib, "SetData");
+		SendErrorCode = (int(*)(int))GETADDRESS(pLib, "SendErrorCode");
 		IsDisplayTextOutput = (bool(*)(int&))GETADDRESS(pLib, "IsDisplayTextOutput");
 		GetSystemLocale = (const char*(*)(int&))GETADDRESS(pLib, "GetSystemLocale");
-		FreeString = (void (*)(char *))GETADDRESS(pLib,"FreeString");
-	}
+    }
 
-	//load r_plugin_callback.dll
+    //load r_plugin_callback.dll
 	int LoadLib()
 	{
 		// The object holding the new PATH env string cannot go out of scope.
 		const char* extPath = NULL;
 		char* libPath = NULL;
-
 		if (getenv("EXT_PATH")) {
 			extPath = getenv("EXT_PATH");
 		}
@@ -242,7 +247,6 @@ extern "C"{
 #else
 			mode = RTLD_NOW | RTLD_GLOBAL;
 #endif
-			Rprintf("Open shared lib %s.\n", libPath);
 			pLib = dlopen(libPath,mode);
 #endif
 		}
@@ -263,20 +267,18 @@ extern "C"{
 		return LOAD_SUCCESS;
 	}
 
-	void FreeLib()
-	{
+    void FreeLib()
+    {
 #ifdef _WINDOWS
-		FreeLibrary(pLib);
+        FreeLibrary(pLib);
 #else
-		dlclose(pLib);
+        dlclose(pLib);
 #endif
-		pLib                    = 0;
-		PostSpssOutput          = 0;
+        pLib                    = 0;
+        PostSpssOutput          = 0;
 		StartProcedure			= 0;
 		StopProcedure			= 0;
 		GetOutputDir            = 0;
-		GetTempDataFile         = 0;
-		SetDataToTemp           = 0;
 		GetModel				= 0;
 		GetFieldCount			= 0;
 		GetFieldName			= 0;
@@ -285,7 +287,7 @@ extern "C"{
 		GetFieldLabel    	    = 0;
 		GetFieldFormat   	    = 0;
 		GetStringMissingValues  = 0;
-		GetFlagValues			= 0;
+		GetFlagValues  = 0;
 		GetValueLabels		    = 0;
 		InsertField				= 0;
 		NextRecord				= 0;
@@ -293,7 +295,6 @@ extern "C"{
 		GetRecordCount			= 0;
 		GetData					= 0;
 		SetData					= 0;
-		FreeString              = 0;
 	}
 
 	void ext_StartProcedure(int* errLevel)
@@ -307,7 +308,7 @@ extern "C"{
 		catch(...) {
 			*errLevel = EXCEPTION_THROWN;
 		}
-	}
+    }
 
 	void ext_StopProcedure(int* errLevel)
     {
@@ -322,30 +323,16 @@ extern "C"{
 		}
     }
 
-	void ext_SendErrorCode(SEXP errCode, SEXP msgType, SEXP para, SEXP errLevel)
+	void ext_SendErrorCode(int* errCode, int* errLevel)
 	{
 		try {
-			int nParas = LENGTH(para);
-			int *errCodeP = INTEGER(errCode);
-			int *msgTypeP = INTEGER(msgType);
-			const char** errorParas = new const char*[nParas];
-			int *cErr = INTEGER(errLevel);
-
-			for(int i = 0; i < nParas; ++i) {
-				errorParas[i] = CHARACTER_VALUE(VECTOR_ELT(para,i));
+			*errLevel = LoadLib();
+			if(*errLevel == LOAD_SUCCESS) {
+				*errLevel = SendErrorCode(*errCode);
 			}
-
-			*cErr = LoadLib();
-			if(*cErr == LOAD_SUCCESS) {
-				*cErr = SendErrorCode(*errCodeP, *msgTypeP, errorParas, nParas);
-			}
-			INTEGER(errLevel)[0] = *cErr;;
-			delete []errorParas;
 		}
 		catch(...) {
-			int *cErr = INTEGER(errLevel);
-			*cErr = EXCEPTION_THROWN;
-			INTEGER(errLevel)[0] = *cErr;;
+			*errLevel = EXCEPTION_THROWN;
 		}
 	}
 
@@ -396,32 +383,6 @@ extern "C"{
 			*errLevel = LoadLib();
 			 if( LOAD_SUCCESS == *errLevel ){
 				*dirPath = GetOutputDir(*errLevel);
-			}
-		}
-		catch(...) {
-			*errLevel = EXCEPTION_THROWN;
-		}
-	}
-
-	void ext_GetTempDataFile(const char** fileName, int *miss, int* errLevel)
-	{
-		try {
-			*errLevel = LoadLib();
-			 if( LOAD_SUCCESS == *errLevel ){
-				*fileName = GetTempDataFile(*miss, *errLevel);
-			}
-		}
-		catch(...) {
-			*errLevel = EXCEPTION_THROWN;
-		}
-	}
-
-	void ext_SetDataToTemp(const char** dirPath, int* errLevel)
-	{
-		try {
-			*errLevel = LoadLib();
-			if( LOAD_SUCCESS == *errLevel ){
-				SetDataToTemp(*dirPath, *errLevel);
 			}
 		}
 		catch(...) {
@@ -672,6 +633,7 @@ extern "C"{
 	SEXP ext_GetMissingValues(SEXP field, SEXP errLevel)
     {
 		try {
+			int nvar = LENGTH(field);
 			int *index = INTEGER(field);
 			int *cErr = INTEGER(errLevel);
 			int count;
@@ -713,6 +675,7 @@ extern "C"{
 	SEXP ext_GetFlagValues(SEXP field, SEXP errLevel)
     {
 		try {
+			int nvar = LENGTH(field);
 			int *index = INTEGER(field);
 			int *cErr = INTEGER(errLevel);
 			int count;
@@ -755,8 +718,11 @@ extern "C"{
 	SEXP ext_GetValueLabels(SEXP field, SEXP errLevel)
 	{
 		try {
+			int nvar = LENGTH(field);
 			int *index = INTEGER(field);
 			int *cErr = INTEGER(errLevel);
+			double* dValues = NULL;
+			int* iValues = NULL;
 			char** sValues = NULL;
 			const char** labels = NULL;
 			int numOfValues;
@@ -927,7 +893,6 @@ extern "C"{
 						} else {
 							SET_STRING_ELT(VECTOR_ELT(ans, j), nRecords, mkCharCE(sValue, CE_UTF8));
 						}
-						FreeString(sValue);    
 					} else if(strcmp("integer", fieldStorages[j]) == 0) {
 						iValue = GetIntegerValue(indexs[j], isMissing, *cErr);
 						// missingFlag 0 means converting all missing to Na
@@ -1151,15 +1116,15 @@ extern "C"{
 /*****************************************************************************
  *                          Load & Unload hook                               *
  *****************************************************************************/
-	void R_init_ibmspsscf82(DllInfo *info)
-	{
-		R_registerRoutines(info, cMethods, callMethods, 0, 0);
-		LoadLib();
-	}
+    void R_init_ibmspsscf70(DllInfo *info)
+    {
+        R_registerRoutines(info, cMethods, callMethods, 0, 0);
+        LoadLib();
+    }
 
-	void R_unload_ibmspsscf82(DllInfo *info)
-	{
-		FreeLib();
-		return;
-	}
+    void R_unload_ibmspsscf70(DllInfo *info)
+    {
+        FreeLib();
+        return;
+    }
 }

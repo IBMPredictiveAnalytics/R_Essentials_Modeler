@@ -20,8 +20,8 @@ ibmspsscfoutput.GetOutputDir <- function()
 {
 	out <- .C("ext_GetOutputDir",as.character(""),as.integer(0),PACKAGE=ibmspsscf_package)
 	last.SpssCfError <<- out[[2]] 
-	if(last.SpssCfError)
-		processSpssCFError(last.SpssCfError)
+	if( is.SpssCfError(last.SpssCfError))
+		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
 		
 	dir <- out[[1]]
 	outputPath <- file.path(dirname(dir), basename(dir), 'ROutput')
@@ -38,19 +38,19 @@ ibmspsscfoutput.SetHTML <- function(htmlOutput, imageNames=NULL)
 		warning("No html output provided")
 		return
 	}
-	ibmspsscfpkg.htmlFilesCount <<- ibmspsscfpkg.htmlFilesCount + 1
+	htmlFilesCount <<- htmlFilesCount + 1
 	outputPath <- ibmspsscfoutput.GetOutputDir()
-	tempFileName <- paste("Output", sprintf("%03d", ibmspsscfpkg.htmlFilesCount), ".html", sep="")
+	tempFileName <- paste("Output", sprintf("%03d", htmlFilesCount), ".html", sep="")
 	fileName <- file.path(outputPath, tempFileName)
 	if(file.exists(fileName))
 	{
 		warning("Existing file is overwrited")
 	}
 	write(htmlOutput, fileName)
-	ibmspsscfpkg.zipFileNames <<- c(ibmspsscfpkg.zipFileNames, tempFileName)
+	zipFileNames <<- c(zipFileNames, tempFileName)
 	for(imageName in imageNames)
 	{
-		ibmspsscfpkg.zipFileNames <<- c(ibmspsscfpkg.zipFileNames, imageName)
+		zipFileNames <<- c(zipFileNames, imageName)
 	}
 }
 
@@ -83,19 +83,19 @@ ibmspsscfoutput.SetHTMLWithAllGraphs <- function()
 	
 	html <- paste(htmlBegin, htmlEnd)
 	
-	ibmspsscfpkg.htmlFilesCount <<- ibmspsscfpkg.htmlFilesCount + 1
+	htmlFilesCount <<- htmlFilesCount + 1
 	outputPath <- ibmspsscfoutput.GetOutputDir()
-	tempFileName <- paste("Output", sprintf("%03d", ibmspsscfpkg.htmlFilesCount), ".html", sep="")
+	tempFileName <- paste("Output", sprintf("%03d", htmlFilesCount), ".html", sep="")
 	fileName <- file.path(outputPath, tempFileName)
 	if(file.exists(fileName))
 	{
 		warning("Existing file is overwrited")
 	}
 	write(html, fileName)
-	ibmspsscfpkg.zipFileNames <<- c(ibmspsscfpkg.zipFileNames, tempFileName)
+	zipFileNames <<- c(zipFileNames, tempFileName)
 	for(imageName in graphNames)
 	{
-		ibmspsscfpkg.zipFileNames <<- c(ibmspsscfpkg.zipFileNames, imageName)
+		zipFileNames <<- c(zipFileNames, imageName)
 	}
 }
 
@@ -108,7 +108,7 @@ ibmspsscfoutput.SinkOn <- function()
 
 ibmspsscfoutput.SinkOff <- function()
 {
-	ibmspsscfpkg.fileNamesList <<- c(ibmspsscfpkg.fileNamesList, "TextOutput.txt")
+	fileNamesList <<- c(fileNamesList, "TextOutput.txt")
 	sink()
 }
 
@@ -126,7 +126,7 @@ ibmspsscfoutput.SetPMML <- function(PMML, statsXML=NULL)
 		warning("Existing PMML output is overwrited")
 	}
 	write(PMML, pmmlFileName)
-	ibmspsscfpkg.fileNamesList <<- c(ibmspsscfpkg.fileNamesList, "PMML.xml")
+	fileNamesList <<- c(fileNamesList, "PMML.xml")
 	if(!is.null(statsXML))
 	{
 		statsFileName <- file.path(outputPath, "StatsXML.xml")
@@ -135,7 +135,7 @@ ibmspsscfoutput.SetPMML <- function(PMML, statsXML=NULL)
 			warning("Existing Statistics XML is overwrited")
 		}
 		write(statsXML, statsFileName)
-		ibmspsscfpkg.fileNamesList <<- c(ibmspsscfpkg.fileNamesList, "StatsXML.xml")
+		fileNamesList <<- c(fileNamesList, "StatsXML.xml")
 	}
 }
 
@@ -143,10 +143,11 @@ ibmspsscfoutput.GetModel <- function()
 {
 	out <- .C("ext_GetModel",as.character(""),as.integer(0),PACKAGE=ibmspsscf_package)
 	last.SpssCfError <<- out[[2]] 
-	if(last.SpssCfError)
-		processSpssCFError(last.SpssCfError)
+	if( is.SpssCfError(last.SpssCfError))
+		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
 	
 	modelFileName <- out[[1]]
+	##print(modelFileName)
 	modelFile <- file(modelFileName, "r+")
 	model <- unserialize(modelFile)
 	close(modelFile)
@@ -166,7 +167,7 @@ ibmspsscfoutput.SetModel <- function(model)
 	serialize(model, modelFile)
 	flush(modelFile)
 	close(modelFile)
-	ibmspsscfpkg.fileNamesList <<- c(ibmspsscfpkg.fileNamesList, "model")
+	fileNamesList <<- c(fileNamesList, "model")
 	##write(tempModel, modelFileName)
 	##.C("ext_SetModel",as.character(""),0,PACKAGE=ibmspsscf_package)
 }
@@ -201,7 +202,10 @@ ibmspsscfoutput.GetOutputNames <- function(indices=NULL)
 			if(index < 1 || index > length(outputFiles))
 			{
 				last.SpssCfError <<- 1013
-				processSpssCFError(last.SpssCfError)
+		        if(is.SpssCfError(last.SpssCfError))
+		        {
+			        stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+		        }
 			}
 			resultFiles <- c(resultFiles, outputFiles[[index]])
 		}

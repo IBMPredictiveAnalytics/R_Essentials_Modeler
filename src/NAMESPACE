@@ -1,10 +1,8 @@
-useDynLib(ibmspsscf82)
+useDynLib(ibmspsscf70)
 
 export(
 	ibmspsscfpkg.preaction,
 	ibmspsscfpkg.postaction,
-	ibmspsscfpkg.startprocedure,
-	ibmspsscfpkg.stopprocedure,
 	ibmspsscfoutput.SetHTMLWithAllGraphs,
 	ibmspsscfoutput.SinkOn,
 	ibmspsscfoutput.SinkOff,
@@ -13,8 +11,6 @@ export(
 	ibmspsscfdatamodel.GetDataModel,
 	ibmspsscfdatamodel.SetDataModel,
 	ibmspsscfdata.GetData,
-	ibmspsscfdata.GetDataFromTemp,
-	ibmspsscfdata.SetDataToTemp,
 	ibmspsscfdata.HasMoreData,
 	ibmspsscfdata.SetData
 )

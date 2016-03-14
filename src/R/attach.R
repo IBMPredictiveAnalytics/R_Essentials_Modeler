@@ -23,7 +23,7 @@ ibmspsscf_package <- NULL
 ibmspsscf_version <- NULL
 plugin_version <- NULL
 ibmspsscf.lib <- NULL
-ibmspsscfNamespace <- "ibmspsscf82"
+ibmspsscfNamespace <- "ibmspsscf70"
 last.SpssCfError <- 0
 ## when the package is attached(via library), the hook function .onAttach is called
 ## before the package environment is sealed
