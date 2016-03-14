@@ -57,18 +57,19 @@ ibmspsscfdatamodel.GetDataModel <- function(fields=NULL)
 											PACKAGE=ibmspsscf_package)
 	n <- length(out)
 	last.SpssCfError <<- out[n] 
-	if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+	if(last.SpssCfError !=0)
+		processSpssCFError(last.SpssCfError)
 	##varName <- unicodeConverterOutput(out[1:n-1])
 	fieldName <- out[1:n-1]
+
 	
 	## get field name label
 	out <- .Call("ext_GetFieldLabels",as.list(fields),as.integer(err),
 											PACKAGE=ibmspsscf_package)
 	n <- length(out)
 	last.SpssCfError <<- out[n] 
-	if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+	if(last.SpssCfError !=0)
+		processSpssCFError(last.SpssCfError)
     fieldLabel <- out[1:n-1]
 	
 	## get field storage
@@ -76,8 +77,8 @@ ibmspsscfdatamodel.GetDataModel <- function(fields=NULL)
 											PACKAGE=ibmspsscf_package)
 	n <- length(out)
 	last.SpssCfError <<- out[n] 
-	if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+	if(last.SpssCfError !=0)
+		processSpssCFError(last.SpssCfError)
 	fieldStorage <- out[1:n-1]
 	
 	
@@ -86,24 +87,24 @@ ibmspsscfdatamodel.GetDataModel <- function(fields=NULL)
 											PACKAGE=ibmspsscf_package)
 	n <- length(out)
 	last.SpssCfError <<- out[n] 
-	if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+	if(last.SpssCfError !=0)
+		processSpssCFError(last.SpssCfError)
 	fieldMeasure <- out[1:n-1]
 	## get field format
 	out <- .Call("ext_GetFieldFormats",as.list(fields),as.integer(err),
 											PACKAGE=ibmspsscf_package)
 	n <- length(out)
 	last.SpssCfError <<- out[n] 
-	if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+	if(last.SpssCfError !=0)
+		processSpssCFError(last.SpssCfError)
 	fieldFormat <- out[1:n-1]
 	
 	out <- .Call("ext_GetFieldRoles",as.list(fields),as.integer(err),
 											PACKAGE=ibmspsscf_package)
 	n <- length(out)
 	last.SpssCfError <<- out[n] 
-	if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+	if(last.SpssCfError !=0)
+		processSpssCFError(last.SpssCfError)
 	fieldRole <- out[1:n-1]
 	
 	fields <- rbind(fieldName,fieldLabel,fieldStorage,fieldMeasure,fieldFormat,fieldRole)
@@ -116,8 +117,8 @@ ibmspsscfdatamodel.GetFieldCount <- function()
 	err <- 0
 	out <- .C("ext_GetFieldCount",as.integer(0), as.integer(err),PACKAGE=ibmspsscf_package)
 	last.SpssCfError <<- out[[2]] 
-	if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+	if(last.SpssCfError)
+		processSpssCFError(last.SpssCfError)
 
 	columns <- out[[1]]
 	columns
@@ -130,8 +131,7 @@ GetFieldName <- function(field)
 	if(!is.numeric(field))
 	{
 		last.SpssCfError <<- 1017 
-	    if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+		processSpssCFError(last.SpssCfError)
 	}
 	fieldIndex <- field
 
@@ -139,8 +139,8 @@ GetFieldName <- function(field)
 	out <- .C("ext_GetFieldName",as.character(""), as.integer(fieldIndex),as.integer(err),PACKAGE=ibmspsscf_package)
 
 	last.SpssCfError <<- out[[3]] 
-	if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+	if(last.SpssCfError)
+		processSpssCFError(last.SpssCfError)
 
 	fieldName <- out[[1]]
 	##varName <- unicodeConverterOutput(varName)
@@ -156,8 +156,8 @@ GetFieldStorage <- function(field)
 	out <- .C("ext_GetFieldStorage",as.character(""), as.integer(fieldIndex),as.integer(err),PACKAGE=ibmspsscf_package)
 
 	last.SpssCfError <<- out[[3]] 
-	if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+	if(last.SpssCfError)
+		processSpssCFError(last.SpssCfError)
 
 	fieldStorage <- out[[1]]
 	fieldStorage
@@ -197,8 +197,7 @@ GetFieldIndex <- function(field)
 	{
 		## can not match the parameter field with field names in data
 		last.SpssCfError <<- 1020
-	    if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+		processSpssCFError(last.SpssCfError)
 	}
 	result
 }
@@ -215,8 +214,8 @@ ibmspsscfdatamodel.GetValueLabels <- function(field)
 	out <- .Call("ext_GetValueLabels",as.integer(fieldIndex),as.integer(err),PACKAGE=ibmspsscf_package)
 	
 	last.SpssCfError <<- out[[3]][1]
-	if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+	if(last.SpssCfError)
+		processSpssCFError(last.SpssCfError)
 
     result <- out[1:2]
     names(result) <- c("values","labels")
@@ -254,8 +253,8 @@ ibmspsscfdatamodel.GetMissingValues <- function(field)
 											PACKAGE=ibmspsscf_package)
 	
 	last.SpssCfError <<- out[[2]][1] 
-	if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+	if(last.SpssCfError)
+		processSpssCFError(last.SpssCfError)
 	
 	
 	if("string" == fieldStorage)
@@ -282,8 +281,8 @@ ibmspsscfdatamodel.GetFlagValues <- function(field)
 											PACKAGE=ibmspsscf_package)
 	
 	last.SpssCfError <<- out[[2]][1] 
-	if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
+	if(last.SpssCfError)
+		processSpssCFError(last.SpssCfError)
 	
 	if("string" == fieldStorage)
 	{
@@ -304,7 +303,7 @@ ibmspsscfdatamodel.SetDataModel <- function(dataModel)
 	if(!checkBaseInfo(dataModel) )
 	{
 		last.SpssCfError <<- 1001 
-	    if( is.SpssCfError(last.SpssCfError))
+	    if(is.SpssCfError(last.SpssCfError))
 		{
 			.Call("ext_SendErrorCode",as.integer(last.SpssCfError), as.integer(3), as.list(""), as.integer(err),PACKAGE=ibmspsscf_package)
 			stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
@@ -369,7 +368,6 @@ ibmspsscfdatamodel.SetDataModel <- function(dataModel)
 		if(is.SpssCfError(last.SpssCfError))
 		{
 			duplicatedFieldName <-  fieldName[anyDuplicated(fieldName)]
-			#duplicatedFieldName <-  c(duplicatedFieldName, "a multi parameter test")
 			.Call("ext_SendErrorCode",as.integer(last.SpssCfError), as.integer(3), as.list(duplicatedFieldName), as.integer(err),PACKAGE=ibmspsscf_package)
 			stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
 		}

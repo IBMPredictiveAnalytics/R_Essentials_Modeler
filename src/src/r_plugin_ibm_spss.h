@@ -38,6 +38,8 @@ extern "C" {
 	RINVOKEMODELER_API void ext_StartProcedure(int* errLevel);
 	RINVOKEMODELER_API void ext_StopProcedure(int* errLevel);
 	RINVOKEMODELER_API void ext_GetOutputDir(const char **dirPath, int* errLevel);
+	RINVOKEMODELER_API void ext_GetTempDataFile(const char **filePath, int *miss, int* errLevel);
+	RINVOKEMODELER_API void ext_SetDataToTemp(const char **filePath, int* errLevel);
 	RINVOKEMODELER_API void ext_GetModel(const char** modelName, int* errLevel);
 	RINVOKEMODELER_API void ext_IsDisplayTextOutput(int* isDisplayTextOutput, int* errLevel);
 	RINVOKEMODELER_API void ext_GetSystemLocale(const char** locale, int* errLevel);

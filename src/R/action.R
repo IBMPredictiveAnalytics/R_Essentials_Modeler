@@ -16,21 +16,24 @@
 #Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #############################################
 
-ibmspsscfpkg.preaction <- function()
+ibmspsscfpkg.startprocedure <- function()
 {
 	options(hasBrowser = FALSE)
 	.C("ext_StartProcedure", as.integer(0),PACKAGE=ibmspsscf_package)
-	
+}
+
+ibmspsscfpkg.preaction <- function()
+{	
 	## the output file names list
-	fileNamesList <<- list()
-	fileNamesList <<- c(fileNamesList, "R_result.txt")
-	zipFileNames <<- list()
-	htmlFilesCount <<- as.integer(0)
+	ibmspsscfpkg.fileNamesList <<- list()
+	ibmspsscfpkg.fileNamesList <<- c(ibmspsscfpkg.fileNamesList, "R_result.txt")
+	ibmspsscfpkg.zipFileNames <<- list()
+	ibmspsscfpkg.htmlFilesCount <<- as.integer(0)
 	
 	outputPath <- ibmspsscfoutput.GetOutputDir()
 	##set the temp workspace, put the console result and graphs in this dir
 	setwd(outputPath)
-	tryCatch({png(filename="Rplot%03d.png")}, error=function(ex) {print(ex)},finally= {})
+	
 	
 	# Stop all existing error message diversion  if any.
 	if(sink.number(type = "message") > 0)
@@ -60,12 +63,13 @@ ibmspsscfpkg.preaction <- function()
 	
 	out <- .C("ext_IsDisplayTextOutput",as.integer(0),as.integer(0),PACKAGE=ibmspsscf_package)
 	last.SpssCfError <<- out[[2]] 
-	if( is.SpssCfError(last.SpssCfError))
-		stop(printSpssError(last.SpssCfError),call. = FALSE, domain = NA)
-	
+	if(last.SpssCfError != 0)
+		processSpssCFError(last.SpssCfError)
 	
 	consoleOutputFileName <- file.path(outputPath, "R_result.txt")
 	fp <- file(consoleOutputFileName, open="at", encoding="UTF-8")
+	ibmspsscfpkg.connections <<- vector()
+	ibmspsscfpkg.connections <<- c(ibmspsscfpkg.connections, fp)
 	
 	# move the sink text output from output.R to here
 	if(out[[1]])
@@ -74,12 +78,14 @@ ibmspsscfpkg.preaction <- function()
 		textFile <- file(textOutputFileName, open="at", encoding="UTF-8")
 		sink(fp, append = TRUE, type = "message")
 		sink(textFile, append = TRUE)
-		fileNamesList <<- c(fileNamesList, "TextOutput.txt")
+		ibmspsscfpkg.fileNamesList <<- c(ibmspsscfpkg.fileNamesList, "TextOutput.txt")
+		ibmspsscfpkg.connections <<- c(ibmspsscfpkg.connections, textFile)
 	} else {
 		##sink all output to the console output
 		sink(fp, append = TRUE, type = "message")
 		sink(fp, append = TRUE)
 	}
+	tryCatch({png(filename="Rplot%03d.png")}, error=function(ex) {warning(ex)},finally= {})
 }
 
 ibmspsscfpkg.postaction <- function()
@@ -102,15 +108,24 @@ ibmspsscfpkg.postaction <- function()
 				}
 			}
 			
-			if(length(zipFileNames) > 0)
+			if(length(ibmspsscfpkg.zipFileNames) > 0)
 			{
-			zip("HTMLOutput", as.character(zipFileNames))
-			fileNamesList <<- c(fileNamesList, "HTMLOutput.zip")
+				zip("HTMLOutput", as.character(ibmspsscfpkg.zipFileNames))
+				ibmspsscfpkg.fileNamesList <<- c(ibmspsscfpkg.fileNamesList, "HTMLOutput.zip")
 			}
 			else
 			{
-				## if there is zipFileNames, the dev.off has been called in SetHTMLWithAllGraphs
+				## if there is ibmspsscfpkg.zipFileNames, the dev.off has been called in SetHTMLWithAllGraphs
 				tryCatch({dev.off()}, error=function(ex) {},finally= {})
+			}
+			
+			# Close all open connections
+			for( i in ibmspsscfpkg.connections)
+			{
+				if(isOpen(i))
+				{
+					close(getConnection(i))
+				}
 			}
 		},
 		error=function(ex) {
@@ -118,10 +133,12 @@ ibmspsscfpkg.postaction <- function()
 			print(ex)
 		},
 		finally= {
-			.C("ext_PostOutput", as.character(fileNamesList),length(fileNamesList),as.integer(0),PACKAGE=ibmspsscf_package)
-			.C("ext_StopProcedure",as.integer(0),PACKAGE=ibmspsscf_package)
+			.C("ext_PostOutput", as.character(ibmspsscfpkg.fileNamesList),length(ibmspsscfpkg.fileNamesList),as.integer(0),PACKAGE=ibmspsscf_package)
 		}
 	)
-	
-	
+}
+
+ibmspsscfpkg.stopprocedure <- function()
+{
+	.C("ext_StopProcedure",as.integer(0),PACKAGE=ibmspsscf_package)
 }
